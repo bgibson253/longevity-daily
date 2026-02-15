@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { supabaseService } from '@/lib/supabase'
 import { anthropicText } from '@/lib/anthropic'
 
+// This endpoint only generates a short impact blurb (2–3 sentences)
+// and stores it on studies. We do NOT display a numerical score.
+
 export async function POST(req: Request) {
   const secret = process.env.INGEST_SECRET
   if (secret) {
@@ -10,7 +13,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}))
-  const limit = Number(body.limit || 10)
+  const limit = Number(body.limit || 20)
 
   const sb = supabaseService()
   const { data: studies, error } = await sb
@@ -23,29 +26,33 @@ export async function POST(req: Request) {
 
   const results: any[] = []
   for (const st of studies || []) {
-    const prompt = `You are ranking PubMed longevity studies by likely impact on humans.\n\nReturn STRICT JSON with keys: score (0-100), why (1-3 concise sentences).\nNo medical advice. Be conservative.\n\nStudy:\nPMID: ${st.pmid}\nTitle: ${st.title}\nJournal: ${st.journal || ''}\nDate: ${st.pub_date || ''}`
-    const text = await anthropicText(prompt)
+    const prompt = `Write a concise 2-3 sentence "Impact" blurb explaining why this study could matter for human lifespan/healthspan.
 
-    // best-effort JSON parse
-    let parsed: any = null
-    try {
-      parsed = JSON.parse(text)
-    } catch {
-      parsed = { score: null, why: text }
-    }
+Rules:
+- No medical advice.
+- Be conservative.
+- Do not invent results; if unclear from title/metadata, say what it *appears* to investigate.
+- Plain language.
 
-    const { error: upErr } = await sb.from('study_scores').upsert(
-      {
-        pmid: st.pmid,
-        score: parsed.score ?? null,
-        why: parsed.why ?? null,
-      },
-      { onConflict: 'pmid' },
-    )
+Study:
+PMID: ${st.pmid}
+Title: ${st.title}
+Journal: ${st.journal || ''}
+Date: ${st.pub_date || ''}
+
+Return ONLY the blurb text.`
+
+    const why = await anthropicText(prompt)
+
+    const { error: upErr } = await sb
+      .from('studies')
+      .update({ why })
+      .eq('pmid', st.pmid)
+
     if (upErr) throw new Error(upErr.message)
 
-    results.push({ pmid: st.pmid, ...parsed })
+    results.push({ pmid: st.pmid, why })
   }
 
-  return NextResponse.json({ ok: true, results })
+  return NextResponse.json({ ok: true, updated: results.length, results })
 }

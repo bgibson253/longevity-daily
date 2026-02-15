@@ -9,6 +9,7 @@ type StudyRow = {
   journal: string | null
   pub_date: string | null
   pubmed_url: string | null
+  why: string | null
 }
 
 function Card({ s }: { s: StudyRow }) {
@@ -22,7 +23,8 @@ function Card({ s }: { s: StudyRow }) {
           {s.title}
         </Link>
       </h2>
-      <div className="mt-2 flex gap-3 text-sm">
+      {s.why ? <p className="mt-2 text-sm text-zinc-700">{s.why}</p> : null}
+      <div className="mt-3 flex gap-3 text-sm">
         <a
           className="text-blue-600 hover:underline"
           href={s.pubmed_url || `https://pubmed.ncbi.nlm.nih.gov/${s.pmid}/`}
@@ -41,7 +43,7 @@ export default async function Home() {
 
   const { data, error } = await sb
     .from('studies')
-    .select('pmid,title,journal,pub_date,pubmed_url')
+    .select('pmid,title,journal,pub_date,pubmed_url,why')
     .order('pub_date', { ascending: false })
     .limit(200)
 
@@ -56,9 +58,6 @@ export default async function Home() {
 
   const all = (data || []) as StudyRow[]
 
-  // Split into two sections WITHOUT duplicates:
-  // - Recent 7 days: first 10 rows by pub_date
-  // - Recent 30 days (excluding those 10): next 10 rows
   const top7 = all.slice(0, 10)
   const pmidSet = new Set(top7.map((s) => s.pmid))
   const top30 = all.filter((s) => !pmidSet.has(s.pmid)).slice(0, 10)
@@ -72,7 +71,7 @@ export default async function Home() {
               <h1 className="text-3xl font-semibold tracking-tight">Longevity Daily</h1>
               <p className="mt-1 text-sm text-zinc-600">PubMed-only. Not medical advice.</p>
             </div>
-            <div className="text-sm text-zinc-500">Sign-in + comments: next</div>
+            <div className="text-sm text-zinc-500">Google sign-in + comments: next</div>
           </div>
         </div>
       </header>
