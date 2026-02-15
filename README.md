@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Longevity Daily
 
-## Getting Started
+A lightweight Next.js site that ingests PubMed studies into Supabase and shows a daily “top studies” feed.
 
-First, run the development server:
+## Local dev
 
 ```bash
+npm i
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=... # server-only (used by ingest/update)
+```
 
-## Learn More
+## Database setup
 
-To learn more about Next.js, take a look at the following resources:
+Run the SQL in `supabase.sql` in your Supabase project.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Ingest workflow
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Option A: API route (works locally + in Vercel)
 
-## Deploy on Vercel
+- Start the dev server
+- Visit: `http://localhost:3000/api/ingest`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Option B: Local script
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+There are ingestion helpers in `scripts/`.
+
+```bash
+ls scripts
+```
+
+## Update “why” blurbs (no paid LLM APIs)
+
+We store a short impact blurb in `studies.why`.
+
+Update a batch via the local heuristic updater:
+
+```bash
+npm run updatewhy
+```
+
+This runs `scripts/update-why.mjs` and writes back to Supabase.
+
+## Deploy (Vercel)
+
+1) Ensure env vars are set in the Vercel project settings
+2) Redeploy
+
+If you change database schema, run the updated SQL in Supabase first.

@@ -1,5 +1,8 @@
-import Link from 'next/link'
 import { supabaseAnon } from '@/lib/supabase'
+import { SiteHeader } from './components/SiteHeader'
+import { HomeHero } from './components/HomeHero'
+import { StudyCard } from './components/StudyCard'
+import Link from 'next/link'
 
 export const revalidate = 60
 
@@ -10,32 +13,6 @@ type StudyRow = {
   pub_date: string | null
   pubmed_url: string | null
   why: string | null
-}
-
-function Card({ s }: { s: StudyRow }) {
-  return (
-    <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="text-xs text-zinc-500">
-        {s.journal || '—'} {s.pub_date ? `• ${s.pub_date}` : ''}
-      </div>
-      <h2 className="mt-1 text-base font-semibold leading-snug">
-        <Link href={`/studies/${s.pmid}`} className="hover:underline">
-          {s.title}
-        </Link>
-      </h2>
-      {s.why ? <p className="mt-2 text-sm text-zinc-700">{s.why}</p> : null}
-      <div className="mt-3 flex gap-3 text-sm">
-        <a
-          className="text-blue-600 hover:underline"
-          href={s.pubmed_url || `https://pubmed.ncbi.nlm.nih.gov/${s.pmid}/`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          PubMed
-        </a>
-      </div>
-    </article>
-  )
 }
 
 export default async function Home() {
@@ -49,9 +26,12 @@ export default async function Home() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-5xl p-6">
-        <h1 className="text-2xl font-semibold">Longevity Daily</h1>
-        <p className="mt-4 text-sm text-red-600">Failed to load studies: {error.message}</p>
+      <main className="min-h-screen bg-saas">
+        <SiteHeader />
+        <div className="container-saas py-14">
+          <h1 className="text-2xl font-semibold">Longevity Daily</h1>
+          <p className="mt-4 text-sm text-red-600">Failed to load studies: {error.message}</p>
+        </div>
       </main>
     )
   }
@@ -63,53 +43,76 @@ export default async function Home() {
   const top30 = all.filter((s) => !pmidSet.has(s.pmid)).slice(0, 10)
 
   return (
-    <main className="min-h-screen bg-zinc-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto max-w-5xl px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Longevity Daily</h1>
-              <p className="mt-1 text-sm text-zinc-600">PubMed-only. Not medical advice.</p>
-            </div>
-            <div className="text-sm text-zinc-500">Google sign-in + comments: next</div>
-          </div>
-        </div>
-      </header>
+    <main className="min-h-screen">
+      <SiteHeader />
+      <HomeHero total={all.length} />
 
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        {all.length === 0 ? (
-          <p className="text-sm text-zinc-600">No studies ingested yet.</p>
-        ) : (
-          <div className="space-y-10">
-            <section>
-              <div className="mb-3 flex items-baseline justify-between">
-                <h2 className="text-lg font-semibold">Recent (7 days) — Top 10</h2>
-                <span className="text-xs text-zinc-500">No duplicates across sections</span>
+      <section className="bg-white" id="top7">
+        <div className="container-saas py-12">
+          {all.length === 0 ? (
+            <div className="card p-6">
+              <p className="text-sm text-zinc-600">No studies ingested yet.</p>
+              <p className="mt-2 text-sm text-zinc-600">
+                Run <span className="kbd">/api/ingest</span> or follow the README to ingest locally.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-zinc-900">Recent (7 days) — Top 10</h2>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Ranked newest-first for now; blurbs pulled from <span className="font-semibold">studies.why</span>.
+                  </p>
+                </div>
+                <div className="text-xs text-zinc-500">No duplicates across sections</div>
               </div>
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {top7.map((s) => (
-                  <Card key={s.pmid} s={s} />
+                  <StudyCard key={s.pmid} s={s} />
                 ))}
               </div>
-            </section>
 
-            <section>
-              <div className="mb-3">
-                <h2 className="text-lg font-semibold">Recent (30 days) — Next 10</h2>
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {top30.map((s) => (
-                  <Card key={s.pmid} s={s} />
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
+              <div className="hr" />
 
-        <footer className="mt-10 border-t pt-4 text-xs text-zinc-500">
-          Disclaimer: informational only, not medical advice.
-        </footer>
-      </div>
+              <section>
+                <div className="mb-3">
+                  <h2 className="text-xl font-bold tracking-tight text-zinc-900">Recent (30 days) — Next 10</h2>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    More papers worth skimming after this week’s top hits.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {top30.map((s) => (
+                    <StudyCard key={s.pmid} s={s} />
+                  ))}
+                </div>
+              </section>
+
+              <div className="hr" />
+
+              <section className="card p-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-900">Sponsors / revenue (soon)</h3>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      We’re building an evidence-first supplements hub.
+                    </p>
+                  </div>
+                  <Link href="/supplements" className="btn-primary">
+                    View Supplements page
+                  </Link>
+                </div>
+              </section>
+            </div>
+          )}
+
+          <footer className="mt-12 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500">
+            Disclaimer: informational only, not medical advice.
+          </footer>
+        </div>
+      </section>
     </main>
   )
 }
