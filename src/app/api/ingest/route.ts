@@ -30,6 +30,18 @@ async function upsertStudies(pmids: string[]) {
   return summaries.map((s) => s.pmid)
 }
 
+function takeUnique(source: string[], count: number, exclude: Set<string>) {
+  const out: string[] = []
+  for (const p of source) {
+    if (out.length >= count) break
+    if (!exclude.has(p)) {
+      exclude.add(p)
+      out.push(p)
+    }
+  }
+  return out
+}
+
 export async function POST(req: Request) {
   const secret = process.env.INGEST_SECRET
   if (secret) {
@@ -40,35 +52,29 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
   const term = String(body.term || DEFAULT_TERM)
 
-  // We ingest TWO windows and keep <= 20 total unique (7d + 30d without duplicates)
+  // Ben decision: 10 from last 7 days + 10 from last 30 days (no duplicates)
   const days7 = Number(body.days7 || 7)
   const days30 = Number(body.days30 || 30)
-  const maxTotal = Number(body.maxTotal || 20)
+  const take7 = Number(body.take7 || 10)
+  const take30 = Number(body.take30 || 10)
 
   const pmids7 = await pubmedSearch(term, days7)
   const pmids30 = await pubmedSearch(term, days30)
 
-  // prefer 7-day first, then fill from 30-day excluding duplicates
   const set = new Set<string>()
-  const selected: string[] = []
-
-  for (const p of pmids7) {
-    if (selected.length >= maxTotal) break
-    if (!set.has(p)) {
-      set.add(p)
-      selected.push(p)
-    }
-  }
-
-  for (const p of pmids30) {
-    if (selected.length >= maxTotal) break
-    if (!set.has(p)) {
-      set.add(p)
-      selected.push(p)
-    }
-  }
+  const selected7 = takeUnique(pmids7, take7, set)
+  const selected30 = takeUnique(pmids30, take30, set)
+  const selected = [...selected7, ...selected30]
 
   const upserted = await upsertStudies(selected)
 
-  return NextResponse.json({ ok: true, count: upserted.length, pmids: upserted, windows: { days7, days30 }, maxTotal })
+  return NextResponse.json({
+    ok: true,
+    total: upserted.length,
+    selected7Count: selected7.length,
+    selected30Count: selected30.length,
+    pmids7: selected7,
+    pmids30: selected30,
+    windows: { days7, days30 },
+  })
 }
