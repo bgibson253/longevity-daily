@@ -1,65 +1,73 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { supabaseAnon } from '@/lib/supabase'
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+export const revalidate = 60 // refresh at most once per minute
+
+type StudyRow = {
+  pmid: string
+  title: string
+  journal: string | null
+  pub_date: string | null
+  pubmed_url: string | null
+}
+
+export default async function Home() {
+  const sb = supabaseAnon()
+
+  // NOTE: we keep "scores" internal if you want the ranking but not to display a numeric score.
+  const { data, error } = await sb
+    .from('studies')
+    .select('pmid,title,journal,pub_date,pubmed_url')
+    .order('pub_date', { ascending: false })
+    .limit(10)
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <h1 className="text-2xl font-semibold">Longevity Daily</h1>
+        <p className="mt-4 text-sm text-red-600">Failed to load studies: {error.message}</p>
       </main>
-    </div>
-  );
+    )
+  }
+
+  const studies = (data || []) as StudyRow[]
+
+  return (
+    <main className="mx-auto max-w-3xl p-6">
+      <header className="mb-6">
+        <h1 className="text-3xl font-semibold tracking-tight">Longevity Daily</h1>
+        <p className="mt-2 text-sm text-zinc-600">
+          PubMed-only. Updated daily. Top 10 most consequential studies from the past week.
+        </p>
+      </header>
+
+      <section className="space-y-3">
+        {studies.length === 0 ? (
+          <p className="text-sm text-zinc-600">No studies ingested yet.</p>
+        ) : (
+          studies.map((s) => (
+            <article key={s.pmid} className="rounded-lg border border-zinc-200 bg-white p-4">
+              <div className="text-xs text-zinc-500">
+                {s.journal || '—'} {s.pub_date ? `• ${s.pub_date}` : ''}
+              </div>
+              <h2 className="mt-1 text-base font-medium">
+                <Link href={`/studies/${s.pmid}`} className="hover:underline">
+                  {s.title}
+                </Link>
+              </h2>
+              <div className="mt-2 flex gap-3 text-sm">
+                <a className="text-blue-600 hover:underline" href={s.pubmed_url || `https://pubmed.ncbi.nlm.nih.gov/${s.pmid}/`} target="_blank" rel="noreferrer">
+                  PubMed
+                </a>
+              </div>
+            </article>
+          ))
+        )}
+      </section>
+
+      <footer className="mt-10 border-t pt-4 text-xs text-zinc-500">
+        Not medical advice.
+      </footer>
+    </main>
+  )
 }
