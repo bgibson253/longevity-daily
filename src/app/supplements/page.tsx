@@ -1,4 +1,5 @@
 import { SiteHeader } from '../components/SiteHeader'
+import { SiteFooter } from '../components/SiteFooter'
 
 export const revalidate = 3600
 
@@ -82,8 +83,8 @@ export default function SupplementsPage() {
             <div className="badge">Revenue • affiliate-ready</div>
             <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-900">Top supplements (v0)</h1>
             <p className="mt-4 text-base text-zinc-700">
-              This is a starter list meant to be useful, conservative, and readable.
-              It will evolve into an evidence-first directory with PubMed links and disclosure.
+              This is a starter list meant to be useful, conservative, and readable. It will evolve into an
+              evidence-first directory with PubMed links and disclosure.
             </p>
           </div>
         </div>
@@ -116,12 +117,15 @@ export default function SupplementsPage() {
             <div className="card p-6">
               <h3 className="text-sm font-semibold">Disclosure</h3>
               <p className="mt-2 text-sm text-zinc-600">
-                Future versions may use affiliate links. Recommendations will remain evidence-first and will include uncertainty.
+                Future versions may use affiliate links. Recommendations will remain evidence-first and will include
+                uncertainty.
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   )
 }

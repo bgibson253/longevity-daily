@@ -3,6 +3,7 @@ import { SiteHeader } from './components/SiteHeader'
 import { HomeHero } from './components/HomeHero'
 import { StudyCard } from './components/StudyCard'
 import Link from 'next/link'
+import { SiteFooter } from './components/SiteFooter'
 
 export const revalidate = 60
 
@@ -62,7 +63,8 @@ export default async function Home() {
                 <div>
                   <h2 className="text-xl font-bold tracking-tight text-zinc-900">Recent (7 days) — Top 10</h2>
                   <p className="mt-1 text-sm text-zinc-600">
-                    Ranked newest-first for now; blurbs pulled from <span className="font-semibold">studies.why</span>.
+                    Ranked newest-first for now; blurbs pulled from{' '}
+                    <span className="font-semibold">studies.why</span>.
                   </p>
                 </div>
                 <div className="text-xs text-zinc-500">No duplicates across sections</div>
@@ -96,9 +98,7 @@ export default async function Home() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-900">Sponsors / revenue (soon)</h3>
-                    <p className="mt-1 text-sm text-zinc-600">
-                      We’re building an evidence-first supplements hub.
-                    </p>
+                    <p className="mt-1 text-sm text-zinc-600">We’re building an evidence-first supplements hub.</p>
                   </div>
                   <Link href="/supplements" className="btn-primary">
                     View Supplements page
@@ -107,12 +107,10 @@ export default async function Home() {
               </section>
             </div>
           )}
-
-          <footer className="mt-12 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500">
-            Disclaimer: informational only, not medical advice.
-          </footer>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   )
 }

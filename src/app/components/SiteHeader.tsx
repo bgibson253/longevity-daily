@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { MobileNav } from './MobileNav'
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -13,7 +14,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-200/70 bg-white/75 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-zinc-200/70 bg-white/80 backdrop-blur">
       <div className="container-saas flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
@@ -23,13 +24,12 @@ export function SiteHeader() {
             <span className="text-sm font-semibold tracking-tight text-zinc-900">Longevity Daily</span>
           </Link>
           <span className="hidden sm:inline-flex" />
-          <span className="hidden sm:inline-flex badge">
-            PubMed-only • daily signal
-          </span>
+          <span className="hidden sm:inline-flex badge">PubMed-only • daily signal</span>
         </div>
 
         <nav className="hidden items-center gap-1 md:flex">
           <NavLink href="/">Studies</NavLink>
+          <NavLink href="/highly-discussed">Highly discussed</NavLink>
           <NavLink href="/supplements">Supplements</NavLink>
           <NavLink href="/account">Account</NavLink>
         </nav>
@@ -41,6 +41,7 @@ export function SiteHeader() {
           <Link href="/supplements" className="btn-primary">
             Explore
           </Link>
+          <MobileNav />
         </div>
       </div>
     </header>
